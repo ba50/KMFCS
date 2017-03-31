@@ -1,9 +1,6 @@
-#!/usr/bin/python3
-
 import numpy as np
 from numpy import sin, cos, pi, sqrt, exp
 from scipy.integrate import quad
-import itertools
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
 
@@ -11,7 +8,6 @@ A = 15
 a = 10/3
 V_0 = 2.5
 R = 1
-n = 5
 x_max = 15
 
 def V_Fermi(x):
@@ -23,91 +19,111 @@ def V(x):
     else:
         return 0.0
 
-def sin_integrate(x, i, j, A):
-    return  j*j*pi*pi*sin(j*pi*x/A)*sin(i*pi*x/A)/A**3 + sin(i*pi*x/A)*V_Fermi(x)*sin(j*pi*x/A)/A
+class Wave:
+    def sin_integrate(self, x, i, j, A):
+        return  j*j*pi*pi*sin(j*pi*x/A)*sin(i*pi*x/A)/A**3 + sin(i*pi*x/A)*V(x)*sin(j*pi*x/A)/A
 
-def cos_integrate(x, i, j, A):
-    if i == 0 and j == 0:
-        return V_Fermi(x)/(2*A)
+    def cos_integrate(self, x, i, j, A):
+        if i == 0 and j == 0:
+            return V(x)/(2*A)
 
-    if i == 0 and not j == 0:
-        return 1/sqrt(2*A)*(V_Fermi(x)*cos(j*pi*x/A)+j**2*pi**2*cos(j*pi/A)/A**2)
+        if i == 0 and not j == 0:
+            return (j*j*pi*pi/A*A+V(x))*cos(j*pi*x/A)/(A*sqrt(2))
 
-    if not i == 0 and j == 0:
-        return V_Fermi(x)/sqrt(2*A)+cos(i*pi*x/A)
+        if not i == 0 and j == 0:
+            return V(x)*cos(i*pi*x/A)/(A*sqrt(2))
 
-    if not i == 0 and not j == 0:
-        return cos(i*pi*x/A)*V_Fermi(x)*cos(j*pi*x/A) + j**2*pi**2*cos(j*pi*x/A)*cos(i*pi*x/A)/A**2
+        if not i == 0 and not j == 0:
+            return j*j*pi*pi*cos(j*pi*x/A)*cos(i*pi*x/A)/A**3 + cos(i*pi*x/A)*V(x)*cos(j*pi*x/A)/A
 
-def wave_even(a, b, sort_w, v, energy_id):
-    wave_x=[]
-    wave_y=[]
-    for x in np.arange(a, b, 0.1):
-        sum_temp=0
-        for index, c in np.ndenumerate(v[:, sort_w[energy_id][0]]):
-            sum_temp = sum_temp + c*sin(index[0]*pi*x/A)/sqrt(A)
-        wave_x.append(x)
-        wave_y.append(sum_temp)
-    return wave_x, wave_y
+    def wave_odd(self, a, b, energy_id):
+        wave_x=[]
+        wave_y=[]
+        for x in np.arange(a, b, 0.1):
+            sum_temp=0
+            for index, c in np.ndenumerate(self.v_odd[:, self.sort_odd[energy_id][0]]):
+                sum_temp = sum_temp + c*sin(index[0]*pi*x/A)/sqrt(A)
+            wave_x.append(x)
+            wave_y.append(sum_temp)
+        return wave_x, wave_y
 
-def wave_odd(a, b, sort_w, v, energy_id):
-    wave_x=[]
-    wave_y=[]
-    for x in np.arange(a, b, 0.1):
-        sum_temp=0
-        for index, c in np.ndenumerate(v[:, sort_w[energy_id][0]]):
-            if index == 0:
-                sum_temp = sum_temp + 1/sqrt(2*A)
-            else:
-                sum_temp = sum_temp + c*cos(index[0]*pi*x/A)/sqrt(A)
-        wave_x.append(x)
-        wave_y.append(np.real(sum_temp))
-    return wave_x, wave_y
+    def wave_even(self, a, b, energy_id):
+        wave_x=[]
+        wave_y=[]
+        for x in np.arange(a, b, 0.1):
+            sum_temp=0
+            for index, c in np.ndenumerate(self.v_even[:, self.sort_even[energy_id][0]]):
+                if index == 0:
+                    sum_temp = sum_temp + 1/sqrt(2*A)
+                else:
+                    sum_temp = sum_temp + c*cos(index[0]*pi*x/A)/sqrt(A)
+            wave_x.append(x)
+            wave_y.append(sum_temp)
+        return wave_x, wave_y
 
-even = np.zeros((n, n))
-odd = np.zeros((n, n))
+    def plot(self):
+        v_y=[]
+        for x in range(-x_max, x_max):
+            v_y.append(V(x))
 
-for index, x in np.ndenumerate(even):
-    even[index[0]][index[1]]   = quad(sin_integrate, -x_max, x_max, args=(index[0]+1, index[1]+1, A), limit=100)[0]
-    odd[index[0]][index[1]]   = quad(cos_integrate, -x_max, x_max, args=(index[0], index[1], A), limit=100)[0]
+        plt.figure()
+        wave_x, wave_y = self.wave_even(-x_max, x_max, 0)
+        plt.plot(wave_x, wave_y)
+        wave_x, wave_y = self.wave_even(-x_max, x_max, 1)
+        plt.plot(wave_x, wave_y)
+        plt.plot(range(-x_max, x_max), v_y)
 
-w_even, v_even = LA.eig(even)
-w_odd, v_odd = LA.eig(odd)
+        plt.figure()
+        wave_x, wave_y = self.wave_odd(-x_max, x_max, 0)
+        plt.plot(wave_x, wave_y)
+        wave_x, wave_y = self.wave_odd(-x_max, x_max, 1)
+        plt.plot(wave_x, wave_y)
+        plt.plot(range(-x_max, x_max), v_y)
 
-dtype = [ ('number', int), ('energy', float)]
+    def __init__(self, n):
+        self.even = np.zeros((n, n))
+        self.odd = np.zeros((n, n))
 
-values = []
-for index, w in np.ndenumerate(w_even):
-    values.append((index[0], w))
-sort_even = np.array(values, dtype=dtype)
-sort_even.sort(order='energy')
-del values
+        for index, x in np.ndenumerate(self.even):
+            self.even[index[0]][index[1]]   = quad(self.cos_integrate, -x_max, x_max, args=(index[0], index[1], A), limit=100)[0]
+            self.odd[index[0]][index[1]]    = quad(self.sin_integrate, -x_max, x_max, args=(index[0]+1, index[1]+1, A), limit=100)[0]
 
-values = []
-for index, w in np.ndenumerate(w_odd):
-    values.append((index[0], np.real(w)))
-sort_odd = np.array(values, dtype=dtype)
-sort_odd.sort(order='energy')
-del values
+        self.w_even, self.v_even = LA.eig(self.even)
+        self.w_odd, self.v_odd = LA.eig(self.odd)
 
-v_y=[]
-for x in range(-x_max, x_max):
-    v_y.append(V_Fermi(x))
+        dtype = [ ('number', int), ('energy', float)]
+
+        values = []
+        for index, w in np.ndenumerate(self.w_even):
+            values.append((index[0], w))
+        self.sort_even = np.array(values, dtype=dtype)
+        self.sort_even.sort(order='energy')
+        del values
+
+        values = []
+        for index, w in np.ndenumerate(self.w_odd):
+            values.append((index[0], w))
+        self.sort_odd = np.array(values, dtype=dtype)
+        self.sort_odd.sort(order='energy')
+        del values
+
+if __name__ == '__main__':
+    wave_list = []
+    wave_list_sort_even = []
+    N = range(15, 20)
+    for n in N:
+        wave = Wave(n)
+        wave_list.append(wave)
+        wave_list_sort_even.append(wave.sort_even[0][1])
+
+    np.savetxt('sin_energy.dat', wave_list[-1].sort_odd[0:3], delimiter='\t', fmt='%.2f')
+    with open('sin_energy.dat', 'r') as orginal: data = orginal.read()
+    with open('sin_energy.dat', 'w') as modefide: modefide.write("number\tEnergy\n"+data)
+    np.savetxt('cos_energy.dat', wave_list[-1].sort_even[0:3], delimiter='\t', fmt='%.2f')
+    with open('cos_energy.dat', 'r') as orginal: data = orginal.read()
+    with open('cos_energy.dat', 'w') as modefide: modefide.write("number\tEnergy\n"+data)
 
 
-plt.figure()
-wave_x, wave_y = wave_even(-x_max, x_max, sort_even, v_even, 0)
-plt.plot(wave_x, wave_y)
-wave_x, wave_y = wave_even(-x_max, x_max, sort_even, v_even, 1)
-plt.plot(wave_x, wave_y)
-plt.plot(range(-x_max, x_max), v_y)
-
-plt.figure()
-wave_x, wave_y = wave_odd(-x_max, x_max, sort_odd, v_odd, 0)
-plt.plot(wave_x, wave_y)
-wave_x, wave_y = wave_odd(-x_max, x_max, sort_odd, v_odd, 1)
-plt.plot(wave_x, wave_y)
-plt.plot(range(-x_max, x_max), v_y)
-
-plt.show()
-
+    plt.scatter(N, wave_list_sort_even)
+    wave_list[-1].plot()
+    plt.show()
