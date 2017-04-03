@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import linalg as LA
+from scipy import linalg as LA
 import matplotlib.pyplot as plt
 
 import calki
@@ -17,7 +17,7 @@ for N in range(3, 8):
                         calki.get_V(i+1, j+1, k+1, l+1, 1, alpha) + \
                         calki.get_V(i+1, j+1, k+1, l+1, 2, alpha)
         S[N*i+j, N*k+l] = calki.get_S(i+1, j+1, k+1, l+1, alpha)
-    w, v = LA.eig(H*LA.inv(S))
+    w, v = LA.eig(H, S)
     N_E.append((N, np.sort(w)[0]))
 N_E = np.array(N_E)
 plt.figure()
@@ -34,7 +34,7 @@ for alpha in np.arange(9.5, 10.5, 0.05):
                         calki.get_V(i+1, j+1, k+1, l+1, 1, alpha) + \
                         calki.get_V(i+1, j+1, k+1, l+1, 2, alpha)
         S[N*i+j, N*k+l] = calki.get_S(i+1, j+1, k+1, l+1, alpha)
-    w, v = LA.eig(H*LA.inv(S))
+    w, v = LA.eig(H, S)
     alpha_E.append((alpha, -27.13*(0.5-1.0/(2.0*a0)-np.sort(w)[0])))
 alpha_E = np.array(alpha_E)
 plt.figure()
