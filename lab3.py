@@ -9,13 +9,17 @@ V_0 = 1
 E_cut = 12
 npw = int(sqrt(E_cut/(2*pi/a)**2)+.5)
 npw = 2*npw + 1
-
-G = np.fromfunction(lambda n, m: (2*pi/a)*n, (npw, 1))
-K = np.arange(-pi/a, pi/a, (2*pi/a)/30, dtype=float)
+G = []
+G.append(0)
+for i in np.arange(1,npw+1,2):
+    G.append(+(i+1)*pi/a)
+    G.append(-(i+1)*pi/a)
+G = np.array(G)
+K = np.arange(-pi/a, pi/a, (2*pi/a)/50, dtype=float)
 H = np.zeros((npw, npw), dtype=float)
 
 E_K = []
-for k in K[0:2]:
+for k in K:
     for index, h in np.ndenumerate(H):
         if index[0] == index[1]:
             H[index] = (k+G[index[0]])**2-V_0/(a*b)
@@ -26,6 +30,6 @@ for k in K[0:2]:
         E_K.append((k, enegry))
 
 E_K = np.array(E_K)
-plt.scatter(E_K[:, 0], E_K[:, 1])
-#plt.show()
+plt.scatter(E_K[:, 0], E_K[:, 1], marker='*')
+plt.show()
 
