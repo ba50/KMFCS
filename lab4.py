@@ -25,9 +25,9 @@ step = (K[0]-GAMMA[0])/20, (K[1]-GAMMA[1])/20
 for i in range(0, 21):
     k_vector.append((GAMMA[0]+i*step[0], GAMMA[1]+i*step[1]))
 
-step = (K[0]-M[0])/20, (K[1]-M[1])/20
+step = (M[0]-K[0])/20, (M[1]-K[1])/20
 for i in np.arange(0, 21):
-    k_vector.append((M[0]+i*step[0], M[1]+i*step[1]))
+    k_vector.append((K[0]+i*step[0], K[1]+i*step[1]))
 
 k_vector = np.array(k_vector)
 
@@ -55,6 +55,4 @@ K_E = np.array(K_E)
 
 plt.scatter(K_E[:, 0], K_E[:, 1])
 plt.show()
-
-
 
